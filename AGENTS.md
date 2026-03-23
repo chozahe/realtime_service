@@ -12,9 +12,9 @@ Implement a WebSocket realtime gateway according to specs in /docs.
 ## Important constraints
 - 1 active connection per user
 - All Kafka events must be deduplicated by event_id
-- WebSocket protocol must follow docs/specs/websocket.md
-- Redis keys must follow docs/specs/redis.md
-- Kafka payloads must follow docs/specs/kafka.md
+- WebSocket protocol must follow docs/websocket.md
+- Redis keys must follow docs/redis.md
+- Kafka payloads must follow docs/kafka.md
 
 ## Modules structure
 - domain/ → core types and logic
@@ -108,3 +108,6 @@ Always:
 6. ack → receipt.delivered
 7. presence online/offline
 8. typing.start / typing.stop
+
+## Language
+- Always respond in Russian
