@@ -33,7 +33,7 @@ pub type AuthenticatedAccessToken {
   AuthenticatedAccessToken(
     user_id: Uuid,
     roles: List(String),
-    token_id: Option(String),
+    token_id: String,
     expires_at: Timestamp,
   )
 }
@@ -150,11 +150,13 @@ pub fn validate_access_token(
   )
 
   use roles <- result.try(validate_roles(payload.roles))
+  use token_id <- result.try(require_token_id(payload.token_id))
+  use _issued_at <- result.try(require_issued_at(payload.issued_at))
 
   Ok(AuthenticatedAccessToken(
     user_id: user_id,
     roles: roles,
-    token_id: payload.token_id,
+    token_id: token_id,
     expires_at: payload.expires_at,
   ))
 }
@@ -260,6 +262,22 @@ fn validate_roles(roles: List(String)) -> Result(List(String), AuthError) {
         True -> Ok(roles)
         False -> Error(InvalidRoles)
       }
+  }
+}
+
+fn require_token_id(token_id: Option(String)) -> Result(String, AuthError) {
+  case token_id {
+    Some(token_id) -> Ok(token_id)
+    None -> Error(MissingClaim("jti"))
+  }
+}
+
+fn require_issued_at(
+  issued_at: Option(Timestamp),
+) -> Result(Timestamp, AuthError) {
+  case issued_at {
+    Some(issued_at) -> Ok(issued_at)
+    None -> Error(MissingClaim("iat"))
   }
 }
 
