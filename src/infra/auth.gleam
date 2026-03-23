@@ -4,7 +4,7 @@ import envie/error.{DecodeError, InvalidValue, Missing}
 import gleam/dynamic/decode
 import gleam/http/request as http_request
 import gleam/http/response.{Response}
-import gleam/httpc as httpc
+import gleam/httpc
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -12,10 +12,13 @@ import gleam/result
 import gleam/time/duration
 import gleam/time/timestamp.{type Timestamp}
 import gleam/uri
-import ywt.{type ParseError, decode as decode_token}
-import ywt/claim.{type Claim, custom, expires_at, issuer as claim_issuer, numeric_date_decoder, typ}
-import ywt/verify_key.{type VerifyKey, set_decoder}
 import youid/uuid.{type Uuid, from_string}
+import ywt.{type ParseError, decode as decode_token}
+import ywt/claim.{
+  type Claim, custom, expires_at, issuer as claim_issuer, numeric_date_decoder,
+  typ,
+}
+import ywt/verify_key.{type VerifyKey, set_decoder}
 
 pub type AuthConfig {
   AuthConfig(
@@ -69,25 +72,29 @@ pub type AuthError {
 }
 
 const jwks_url_env = "AUTH_JWKS_URL"
+
 const issuer_env = "AUTH_JWT_ISSUER"
+
 const leeway_env = "AUTH_JWT_LEEWAY_SECONDS"
+
 const timeout_env = "AUTH_JWKS_TIMEOUT_MS"
+
 const default_leeway_seconds = 5
-const default_http_timeout_ms = 5_000
+
+const default_http_timeout_ms = 5000
+
 const allowed_access_roles = ["user", "admin", "moderator"]
 
 pub fn load_config() -> Result(AuthConfig, AuthError) {
   use jwks_url <- result.try(load_jwks_url())
   use issuer <- result.try(load_optional_issuer())
 
-  Ok(
-    AuthConfig(
-      jwks_url: jwks_url,
-      issuer: issuer,
-      leeway_seconds: envie.get_int(leeway_env, default_leeway_seconds),
-      http_timeout_ms: envie.get_int(timeout_env, default_http_timeout_ms),
-    ),
-  )
+  Ok(AuthConfig(
+    jwks_url: jwks_url,
+    issuer: issuer,
+    leeway_seconds: envie.get_int(leeway_env, default_leeway_seconds),
+    http_timeout_ms: envie.get_int(timeout_env, default_http_timeout_ms),
+  ))
 }
 
 pub fn fetch_jwks(config: AuthConfig) -> Result(List(VerifyKey), AuthError) {
@@ -144,17 +151,17 @@ pub fn validate_access_token(
 
   use roles <- result.try(validate_roles(payload.roles))
 
-  Ok(
-    AuthenticatedAccessToken(
-      user_id: user_id,
-      roles: roles,
-      token_id: payload.token_id,
-      expires_at: payload.expires_at,
-    ),
-  )
+  Ok(AuthenticatedAccessToken(
+    user_id: user_id,
+    roles: roles,
+    token_id: payload.token_id,
+    expires_at: payload.expires_at,
+  ))
 }
 
-pub fn authenticate(token: String) -> Result(AuthenticatedAccessToken, AuthError) {
+pub fn authenticate(
+  token: String,
+) -> Result(AuthenticatedAccessToken, AuthError) {
   use config <- result.try(load_config())
   use keys <- result.try(fetch_jwks(config))
 
@@ -232,24 +239,24 @@ fn access_claims_decoder() -> decode.Decoder(AccessClaims) {
     decode.map(decode.string, Some),
   )
 
-  decode.success(
-    AccessClaims(
-      subject: subject,
-      expires_at: expires_at,
-      issued_at: issued_at,
-      token_id: token_id,
-      roles: roles,
-      token_type: token_type,
-      issuer: issuer,
-    ),
-  )
+  decode.success(AccessClaims(
+    subject: subject,
+    expires_at: expires_at,
+    issued_at: issued_at,
+    token_id: token_id,
+    roles: roles,
+    token_type: token_type,
+    issuer: issuer,
+  ))
 }
 
 fn validate_roles(roles: List(String)) -> Result(List(String), AuthError) {
   case roles {
     [] -> Error(InvalidRoles)
     _ ->
-      case list.all(roles, fn(role) { list.contains(allowed_access_roles, role) }) {
+      case
+        list.all(roles, fn(role) { list.contains(allowed_access_roles, role) })
+      {
         True -> Ok(roles)
         False -> Error(InvalidRoles)
       }

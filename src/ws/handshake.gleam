@@ -1,14 +1,19 @@
 import gleam/http/request.{type Request}
 import gleam/result
-import infra/auth.{authenticate as authenticate_token, type AuthenticatedAccessToken, type AuthError}
-import ws/token.{from_request, type TokenExtractionError}
+import infra/auth.{
+  type AuthError, type AuthenticatedAccessToken,
+  authenticate as authenticate_token,
+}
+import ws/token.{type TokenExtractionError, from_request}
 
 pub type HandshakeError {
   TokenExtractionFailed(TokenExtractionError)
   AuthenticationFailed(AuthError)
 }
 
-pub fn authenticate(request: Request(body)) -> Result(AuthenticatedAccessToken, HandshakeError) {
+pub fn authenticate(
+  request: Request(body),
+) -> Result(AuthenticatedAccessToken, HandshakeError) {
   use access_token <- result.try(
     from_request(request)
     |> result.map_error(TokenExtractionFailed),

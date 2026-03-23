@@ -8,7 +8,9 @@ pub type TokenExtractionError {
   InvalidAuthorizationHeader
 }
 
-pub fn from_request(request: Request(body)) -> Result(String, TokenExtractionError) {
+pub fn from_request(
+  request: Request(body),
+) -> Result(String, TokenExtractionError) {
   case from_query(request) {
     Ok(token) -> Ok(token)
     Error(Nil) -> from_authorization_header(request)
