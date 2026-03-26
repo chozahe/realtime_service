@@ -1,3 +1,4 @@
+import contracts/ws/ws_inbound
 import gleam/http/request
 import gleam/http/response as http_response
 import gleam/json
@@ -108,6 +109,24 @@ pub fn validate_access_token_rejects_invalid_roles_test() {
 
   let assert Error(auth.InvalidRoles) =
     auth.validate_access_token(jwt, keys, config)
+}
+
+pub fn ws_ack_decode_accepts_string_ids_test() {
+  let message =
+    "{\"type\":\"ack\",\"id\":\"msg_client_001\",\"payload\":{\"event_id\":\"evt_a1b2c3d4\"}}"
+
+  let assert Ok(ws_inbound.AckMessage(
+    id: "msg_client_001",
+    event_id: "evt_a1b2c3d4",
+  )) = ws_inbound.decode(message)
+}
+
+pub fn ws_ping_decode_accepts_string_id_test() {
+  let message =
+    "{\"type\":\"ping\",\"id\":\"msg_client_004\",\"payload\":{\"client_time\":\"2024-06-01T10:00:00Z\"}}"
+
+  let assert Ok(ws_inbound.PingMessage(id: "msg_client_004", ..)) =
+    ws_inbound.decode(message)
 }
 
 pub fn unauthorized_response_for_missing_token_test() {

@@ -10,10 +10,10 @@ import tempo/datetime
 import youid/uuid.{type Uuid}
 
 pub type InboundMessage {
-  AckMessage(id: Uuid, event_id: Uuid)
-  TypingStartMessage(id: Uuid, chat_id: Uuid)
-  TypingStopMessage(id: Uuid, chat_id: Uuid)
-  PingMessage(id: Uuid, client_time: DateTime)
+  AckMessage(id: String, event_id: String)
+  TypingStartMessage(id: String, chat_id: Uuid)
+  TypingStopMessage(id: String, chat_id: Uuid)
+  PingMessage(id: String, client_time: DateTime)
 }
 
 type RawInboundEnvelope {
@@ -45,7 +45,7 @@ pub fn decode(message: String) -> Result(InboundMessage, WsDecodeError) {
 fn decode_envelope(
   envelope: RawInboundEnvelope,
 ) -> Result(InboundMessage, WsDecodeError) {
-  use id <- result.try(parse_uuid(envelope.id, envelope.message_type))
+  let id = envelope.id
   case envelope.message_type {
     message_type if message_type == message_type_ack ->
       decode_ack(id, envelope.payload)
@@ -60,10 +60,10 @@ fn decode_envelope(
 }
 
 fn decode_ack(
-  id: Uuid,
+  id: String,
   payload: Dynamic,
 ) -> Result(InboundMessage, WsDecodeError) {
-  use event_id <- result.try(payload_uuid_field(
+  use event_id <- result.try(payload_field(
     payload,
     message_type_ack,
     payload_field_event_id,
@@ -72,7 +72,7 @@ fn decode_ack(
 }
 
 fn decode_typing_start(
-  id: Uuid,
+  id: String,
   payload: Dynamic,
 ) -> Result(InboundMessage, WsDecodeError) {
   use chat_id <- result.try(payload_uuid_field(
@@ -84,7 +84,7 @@ fn decode_typing_start(
 }
 
 fn decode_typing_stop(
-  id: Uuid,
+  id: String,
   payload: Dynamic,
 ) -> Result(InboundMessage, WsDecodeError) {
   use chat_id <- result.try(payload_uuid_field(
@@ -96,7 +96,7 @@ fn decode_typing_stop(
 }
 
 fn decode_ping(
-  id: Uuid,
+  id: String,
   payload: Dynamic,
 ) -> Result(InboundMessage, WsDecodeError) {
   use client_time <- result.try(payload_datetime_field(
