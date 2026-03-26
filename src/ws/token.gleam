@@ -23,8 +23,13 @@ pub fn from_parts(
   query_token query_token: Option(String),
   authorization_header authorization_header: Option(String),
 ) -> Result(String, TokenExtractionError) {
-  case option_then(query_token, non_empty_option) {
-    Some(token) -> Ok(token)
+  case query_token {
+    Some(token) ->
+      case non_empty_option(token) {
+        Some(token) -> Ok(token)
+        None -> from_authorization_header_value(authorization_header)
+      }
+
     None -> from_authorization_header_value(authorization_header)
   }
 }
@@ -46,15 +51,10 @@ pub fn from_authorization_header(
 pub fn from_authorization_header_value(
   authorization_header: Option(String),
 ) -> Result(String, TokenExtractionError) {
-  let header = case authorization_header {
-    Some(header) -> Ok(header)
+  case authorization_header {
     None -> Error(MissingToken)
-  }
-
-  use header <- result.try(header)
-  case header {
-    "Bearer " <> token -> parse_bearer_token(token)
-    "bearer " <> token -> parse_bearer_token(token)
+    Some("Bearer " <> token) -> parse_bearer_token(token)
+    Some("bearer " <> token) -> parse_bearer_token(token)
     _ -> Error(InvalidAuthorizationHeader)
   }
 }
@@ -81,12 +81,5 @@ fn result_to_option(result: Result(a, e)) -> Option(a) {
   case result {
     Ok(value) -> Some(value)
     Error(_) -> None
-  }
-}
-
-fn option_then(value: Option(a), apply: fn(a) -> Option(b)) -> Option(b) {
-  case value {
-    Some(value) -> apply(value)
-    None -> None
   }
 }
