@@ -44,14 +44,10 @@ pub fn on_init(
 
   let state = ConnectionState(expiry_timer: expiry_timer)
 
-  let _ =
-    send_message(
-      connection,
-      connected_message(
-        connection_id: connection_id,
-        user_id: access_token.user_id,
-      ),
-    )
+  send_message(
+    connection,
+    connected_message(connection_id, access_token.user_id),
+  )
 
   #(state, Some(process.new_selector() |> process.select(expiry_subject)))
 }
@@ -65,9 +61,7 @@ pub fn on_message(
   case message {
     websocket.TextMessage(payload) ->
       handle_text_message(state, payload, connection)
-    websocket.CustomMessage(ExpireToken) -> {
-      websocket.stop_connection()
-    }
+    websocket.CustomMessage(ExpireToken) -> websocket.stop_connection()
     websocket.ConnectionClosed -> websocket.stop_connection()
     websocket.BinaryMessage(_) -> websocket.continue_connection(state)
   }
@@ -80,18 +74,14 @@ fn handle_text_message(
 ) -> websocket.Action(ConnectionState, ConnectionMessage) {
   case decode_inbound(payload) {
     Ok(PingMessage(id:, ..)) -> {
-      let _ =
-        send_message(
-          connection,
-          Pong(id: uuid.to_string(id), server_time: current_time()),
-        )
+      send_message(connection, Pong(id: id, server_time: current_time()))
       websocket.continue_connection(state)
     }
 
     Ok(_) -> websocket.continue_connection(state)
 
     Error(error) -> {
-      let _ = send_message(connection, decode_error_to_outbound(error))
+      send_message(connection, decode_error_to_outbound(error))
       websocket.continue_connection(state)
     }
   }
@@ -106,16 +96,19 @@ pub fn on_close(state: ConnectionState, _dependencies: Dependencies) -> Nil {
 fn send_message(
   connection: websocket.Connection,
   message: OutboundMessage,
-) -> Result(Nil, Nil) {
-  message
-  |> encode_outbound
-  |> websocket.send_text(connection, _)
-  |> result.replace_error(Nil)
+) -> Nil {
+  let _ =
+    message
+    |> encode_outbound
+    |> websocket.send_text(connection, _)
+    |> result.replace_error(Nil)
+
+  Nil
 }
 
 fn connected_message(
-  connection_id connection_id: String,
-  user_id user_id: uuid.Uuid,
+  connection_id: String,
+  user_id: uuid.Uuid,
 ) -> OutboundMessage {
   Connected(
     id: "ws_" <> uuid.v7_string(),
