@@ -14,7 +14,7 @@ Implement a WebSocket realtime gateway according to specs in /docs.
 - All Kafka events must be deduplicated by event_id
 - WebSocket protocol must follow docs/websocket.md
 - Redis keys must follow docs/redis.md
-- Kafka payloads must follow docs/kafka.md
+- Kafka payloads must follow docs/kafka-schema.md
 
 ## Modules structure
 - domain/ → core types and logic
